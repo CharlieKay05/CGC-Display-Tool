@@ -1,1 +1,1 @@
-# CGC-Display-Tool
+# cgc-display-tool
