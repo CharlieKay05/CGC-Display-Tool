@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CGC Display Assessment Tool — Mars</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --mb: #00008B;
+  --mb-light: #f0f0fa;
+  --mb-border: #c8c8e8;
+  --rag-r: #E24B4A; --rag-a: #EF9F27; --rag-g: #639922;
+  --rag-rb: #fcebeb; --rag-ab: #faeeda; --rag-gb: #eaf3de;
+  --bg: #f4f4f8;
+  --surface: #ffffff;
+  --surface2: #f8f8fc;
+  --text: #1a1a2e;
+  --text2: #6b6b80;
+  --border: #e4e4ee;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+/* ── SCREENS ── */
+.screen { display: none; flex-direction: column; height: 100vh; overflow: hidden; }
+.screen.active { display: flex; }
+
+/* ── WELCOME ── */
+.welcome-bg { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); }
+.welcome-title { font-size: 26px; font-weight: 600; color: var(--mb); text-align: center; margin-bottom: 8px; }
+.welcome-sub { font-size: 14px; color: var(--text2); text-align: center; margin-bottom: 40px; max-width: 420px; line-height: 1.6; }
+.welcome-cards { display: flex; gap: 20px; width: 100%; max-width: 580px; }
+.welcome-card { flex: 1; background: var(--surface); border: 1.5px solid var(--mb-border); border-radius: var(--radius-lg); padding: 32px 24px; cursor: pointer; text-align: center; transition: border-color 0.15s, transform 0.1s; }
+.welcome-card:hover { border-color: var(--mb); transform: translateY(-2px); }
+.welcome-card-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--mb-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.welcome-card-icon svg { width: 24px; height: 24px; }
+.welcome-card-title { font-size: 15px; font-weight: 600; color: var(--mb); margin-bottom: 8px; }
+.welcome-card-desc { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+/* ── FORMS ── */
+.form-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 24px; overflow-y: auto; background: var(--bg); }
+.form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 36px; width: 100%; max-width: 500px; }
+.form-card-title { font-size: 20px; font-weight: 600; color: var(--mb); margin-bottom: 4px; }
+.form-card-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
+.form-field { margin-bottom: 18px; }
+.form-field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+.form-field input, .form-field textarea {
+  width: 100%; font-size: 13px; padding: 9px 12px; border-radius: var(--radius);
+  border: 1px solid var(--mb-border); background: var(--surface2);
+  color: var(--text); outline: none; font-family: inherit; transition: border-color 0.15s;
+}
+.form-field input:focus, .form-field textarea:focus { border-color: var(--mb); background: white; }
+.form-field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+.form-row { display: flex; gap: 14px; }
+.form-row .form-field { flex: 1; }
+.form-actions { display: flex; gap: 10px; margin-top: 10px; }
+.form-error { font-size: 12px; color: var(--rag-r); margin-bottom: 12px; display: none; padding: 8px 12px; background: var(--rag-rb); border-radius: var(--radius); }
+
+/* ── BUTTONS ── */
+.btn { padding: 9px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; transition: opacity 0.15s, transform 0.1s; border: none; }
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--mb); color: white; }
+.btn-primary:hover { opacity: 0.88; }
+.btn-ghost { background: none; border: 1px solid var(--mb-border); color: var(--text2); }
+.btn-ghost:hover { border-color: var(--mb); color: var(--mb); }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-danger { background: none; border: 1px solid #f09595; color: var(--rag-r); }
+.btn-danger:hover { background: var(--rag-rb); }
+
+/* ── SESSIONS LIST ── */
+.sessions-screen { flex: 1; overflow-y: auto; background: var(--bg); }
+.sessions-inner { max-width: 720px; margin: 0 auto; padding: 32px 24px; }
+.sessions-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.sessions-title { font-size: 20px; font-weight: 600; color: var(--mb); }
+.sessions-count { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.session-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 16px; transition: border-color 0.15s; }
+.session-card:hover { border-color: var(--mb); }
+.session-grade-badge { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: white; flex-shrink: 0; }
+.session-card-info { flex: 1; min-width: 0; }
+.session-card-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.session-card-meta { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.session-card-notes { font-size: 11px; color: var(--text2); margin-top: 3px; font-style: italic; }
+.session-card-score { font-size: 14px; font-weight: 600; color: var(--mb); white-space: nowrap; }
+.session-card-arrow { color: var(--text2); font-size: 20px; }
+.sessions-empty { text-align: center; padding: 80px 20px; color: var(--text2); }
+.sessions-empty-icon { font-size: 48px; opacity: 0.2; margin-bottom: 16px; }
+
+/* ── APP HEADER ── */
+.app-header { background: white; border-bottom: 2px solid var(--mb); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-divider { width: 1px; height: 28px; background: var(--mb-border); }
+.header-session-pill { background: var(--mb-light); border: 1px solid var(--mb-border); border-radius: 20px; padding: 4px 14px; display: flex; align-items: center; gap: 8px; }
+.header-session-label { font-size: 11px; color: var(--mb); opacity: 0.7; }
+.header-session-name { font-size: 13px; font-weight: 600; color: var(--mb); }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.logo-upload-label { background: var(--mb); color: white; font-size: 11px; font-weight: 500; padding: 5px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+
+/* ── TABS ── */
+.tabs { background: white; border-bottom: 1px solid var(--border); display: flex; padding: 0 20px; flex-shrink: 0; }
+.tab { padding: 11px 18px; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text2); transition: all 0.15s; white-space: nowrap; }
+.tab.active { color: var(--mb); border-bottom-color: var(--mb); }
+.tab:hover:not(.active) { color: var(--text); }
+
+/* ── MAIN LAYOUT ── */
+.app-body { display: flex; flex: 1; overflow: hidden; }
+
+/* ── PHOTO PANEL ── */
+.photo-panel { width: 52%; display: flex; flex-direction: column; background: #0d0d0d; border-right: 1px solid #222; }
+.photo-stage { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.photo-stage img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.photo-empty { display: flex; flex-direction: column; align-items: center; gap: 14px; color: #555; text-align: center; }
+.photo-empty-icon { width: 64px; height: 64px; border: 2px dashed #444; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.photo-empty p { font-size: 13px; color: #666; }
+.photo-label-badge { position: absolute; top: 12px; left: 12px; background: rgba(0,0,30,0.75); color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; backdrop-filter: blur(2px); }
+.nav-btn-circle { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,50,0.6); color: white; border: none; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.nav-btn-circle:hover { background: rgba(0,0,80,0.9); }
+.nav-btn-circle.left { left: 12px; }
+.nav-btn-circle.right { right: 12px; }
+.photo-count-badge { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(0,0,30,0.7); color: white; padding: 3px 12px; border-radius: 12px; font-size: 11px; white-space: nowrap; }
+.thumb-strip { display: flex; gap: 6px; padding: 8px 12px; background: #161616; overflow-x: auto; flex-shrink: 0; }
+.thumb-wrap { position: relative; flex-shrink: 0; }
+.thumb { width: 58px; height: 44px; object-fit: cover; border-radius: 4px; cursor: pointer; opacity: 0.55; border: 2px solid transparent; display: block; transition: opacity 0.15s; }
+.thumb:hover { opacity: 0.8; }
+.thumb.active { opacity: 1; border-color: var(--mb); }
+.thumb-rag-dot { position: absolute; bottom: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.4); }
+.add-thumb { width: 58px; height: 44px; border-radius: 4px; border: 1.5px dashed #444; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #555; font-size: 22px; flex-shrink: 0; transition: border-color 0.15s, color 0.15s; }
+.add-thumb:hover { border-color: #888; color: #aaa; }
+input[type=file] { display: none; }
+
+/* ── ASSESS PANEL ── */
+.assess-panel { width: 48%; display: flex; flex-direction: column; background: white; overflow: hidden; }
+.score-bar { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface2); flex-shrink: 0; }
+.score-big { font-size: 30px; font-weight: 700; color: var(--mb); }
+.score-denom { font-size: 13px; color: var(--text2); }
+.score-sublabel { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.grade-badge { font-size: 20px; font-weight: 700; padding: 6px 16px; border-radius: 8px; color: white; }
+.prog-wrap { flex: 1; max-width: 150px; }
+.prog-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 11px; color: var(--text2); }
+.prog-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.prog-fill { height: 5px; border-radius: 3px; transition: width 0.3s, background 0.3s; }
+.rag-legend { display: flex; gap: 12px; padding: 6px 16px; border-bottom: 1px solid var(--border); background: var(--surface2); flex-shrink: 0; flex-wrap: wrap; }
+.rag-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+.rag-legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+.img-label-row { padding: 7px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.img-label-row label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+.img-label-row input { flex: 1; font-size: 13px; padding: 5px 9px; border-radius: 6px; border: 1px solid var(--mb-border); background: var(--surface2); color: var(--text); outline: none; font-family: inherit; }
+.img-label-row input:focus { border-color: var(--mb); }
+.session-info-bar { padding: 7px 16px; background: var(--mb-light); border-bottom: 1px solid var(--mb-border); display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+.sib-item { font-size: 12px; color: var(--mb); }
+.sib-sep { font-size: 12px; color: var(--mb-border); }
+.principles-scroll { flex: 1; overflow-y: auto; }
+.principles-list { padding: 10px; }
+.pcard { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 6px; transition: border-color 0.15s; }
+.pcard:hover { border-color: var(--mb-border); }
+.pcard-header { display: flex; align-items: flex-start; gap: 10px; }
+.pnum { font-size: 11px; font-weight: 600; color: var(--text2); min-width: 22px; padding-top: 1px; }
+.ptitle { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.pdesc { font-size: 11px; color: var(--text2); line-height: 1.5; }
+.rag-ind { width: 10px; height: 10px; border-radius: 50%; background: #e0e0e0; flex-shrink: 0; margin-top: 2px; }
+.rag-btns { display: flex; gap: 5px; margin-top: 8px; margin-left: 32px; }
+.rag-btn { padding: 3px 11px; border-radius: 5px; border: 1px solid transparent; font-size: 11px; cursor: pointer; font-weight: 600; transition: all 0.12s; font-family: inherit; }
+.rag-btn.r { background: var(--rag-rb); border-color: #f09595; color: var(--rag-r); }
+.rag-btn.a { background: var(--rag-ab); border-color: #fac775; color: #854F0B; }
+.rag-btn.g { background: var(--rag-gb); border-color: #c0dd97; color: var(--rag-g); }
+.rag-btn.active.r { background: var(--rag-r); color: white; border-color: var(--rag-r); }
+.rag-btn.active.a { background: var(--rag-a); color: white; border-color: var(--rag-a); }
+.rag-btn.active.g { background: var(--rag-g); color: white; border-color: var(--rag-g); }
+.submit-footer { border-top: 1px solid var(--mb-border); background: var(--mb-light); padding: 12px 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.submit-status { font-size: 12px; color: var(--text2); flex: 1; }
+.submitted-banner { display: none; background: var(--rag-gb); border: 1px solid #c0dd97; border-radius: var(--radius); padding: 12px 16px; margin: 10px 14px 0; text-align: center; }
+.submitted-banner.show { display: block; }
+.submitted-banner strong { color: var(--rag-g); font-size: 14px; display: block; margin-bottom: 3px; }
+.submitted-banner span { font-size: 12px; color: #3B6D11; }
+
+/* ── BEST PRACTICE ── */
+.bp-wrap { display: flex; flex-direction: column; flex: 1; overflow: hidden; background: var(--bg); }
+.bp-gallery { flex: 1; overflow-y: auto; padding: 24px; }
+.bp-gallery-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+.bp-gallery-title { font-size: 16px; font-weight: 600; color: var(--mb); }
+.bp-gallery-count { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.bp-grid { display: flex; flex-wrap: wrap; gap: 18px; }
+.bp-empty { text-align: center; padding: 80px 20px; color: var(--text2); }
+.bp-empty-icon { font-size: 48px; opacity: 0.2; margin-bottom: 14px; }
+.bp-bubble { width: 160px; cursor: pointer; display: flex; flex-direction: column; background: white; border: 1.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; transition: border-color 0.15s, transform 0.1s; }
+.bp-bubble:hover { border-color: var(--mb); transform: translateY(-2px); }
+.bp-bubble img { width: 160px; height: 116px; object-fit: cover; display: block; }
+.bp-bubble-img-placeholder { width: 160px; height: 116px; background: var(--mb-light); display: flex; align-items: center; justify-content: center; font-size: 32px; opacity: 0.4; }
+.bp-bubble-label { padding: 9px 10px; }
+.bp-bubble-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-bubble-region { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-bubble-num { display: inline-block; background: var(--mb-light); color: var(--mb); font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; margin-top: 5px; }
+.bp-add-form { border-top: 1px solid var(--mb-border); background: white; padding: 18px 22px; flex-shrink: 0; display: none; }
+.bp-add-form.open { display: block; }
+.bp-form-title { font-size: 14px; font-weight: 600; color: var(--mb); margin-bottom: 14px; }
+.bp-form-row { display: flex; gap: 14px; align-items: flex-start; }
+.bp-img-pick { width: 108px; height: 80px; border-radius: var(--radius); border: 2px dashed var(--mb-border); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; overflow: hidden; background: var(--mb-light); color: #aaa; font-size: 11px; text-align: center; transition: border-color 0.15s; }
+.bp-img-pick:hover { border-color: var(--mb); }
+.bp-img-pick img { width: 100%; height: 100%; object-fit: cover; }
+.bp-form-fields { flex: 1; display: flex; flex-direction: column; gap: 9px; }
+.bp-form-fields input, .bp-form-fields textarea { width: 100%; font-size: 13px; padding: 7px 10px; border-radius: var(--radius); border: 1px solid var(--mb-border); background: var(--surface2); color: var(--text); outline: none; font-family: inherit; }
+.bp-form-fields input:focus, .bp-form-fields textarea:focus { border-color: var(--mb); }
+.bp-form-fields textarea { resize: none; height: 58px; line-height: 1.5; }
+.bp-form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+
+/* ── SUMMARY ── */
+.summary-scroll { flex: 1; overflow-y: auto; background: var(--bg); }
+.summary-inner { max-width: 820px; margin: 0 auto; padding: 28px 24px; }
+.summary-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.summary-title { font-size: 20px; font-weight: 600; color: var(--mb); }
+.summary-meta { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.rollup-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.rollup-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+.rollup-val { font-size: 26px; font-weight: 700; }
+.rollup-lbl { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.img-summary-card { background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden; }
+.img-summary-top { display: flex; }
+.img-summary-thumb { width: 130px; height: 96px; object-fit: cover; flex-shrink: 0; }
+.img-summary-info { flex: 1; padding: 12px 16px; }
+.img-summary-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.img-summary-meta { font-size: 12px; color: var(--text2); }
+.img-summary-score { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.img-summary-grade { font-size: 13px; font-weight: 700; padding: 2px 11px; border-radius: 5px; color: white; }
+.img-principles { padding: 0 16px 12px; }
+.p-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.p-row:last-child { border-bottom: none; }
+.p-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.p-name { flex: 1; color: var(--text); }
+.p-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+.p-badge.r { background: var(--rag-rb); color: var(--rag-r); }
+.p-badge.a { background: var(--rag-ab); color: #854F0B; }
+.p-badge.g { background: var(--rag-gb); color: var(--rag-g); }
+
+/* ── OVERLAY ── */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,20,0.6); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+.overlay.open { display: flex; }
+.detail-modal { background: white; border-radius: var(--radius-lg); overflow: hidden; width: 100%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; }
+.detail-img-wrap { position: relative; }
+.detail-img { width: 100%; max-height: 360px; object-fit: contain; background: #111; display: block; }
+.detail-close { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.55); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.detail-close:hover { background: rgba(0,0,0,0.85); }
+.detail-num-badge { position: absolute; top: 12px; left: 12px; background: var(--mb); color: white; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 5px; }
+.detail-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.detail-title { font-size: 18px; font-weight: 600; color: var(--mb); margin-bottom: 4px; }
+.detail-region { font-size: 12px; color: var(--text2); margin-bottom: 14px; }
+.detail-commentary { font-size: 13px; color: var(--text2); line-height: 1.7; }
+.detail-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a2e; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 500; opacity: 0; transition: transform 0.3s, opacity 0.3s; z-index: 500; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #aaa; }
+</style>
+</head>
+<body>
+
+<!-- ══ WELCOME SCREEN ══ -->
+<div class="screen active" id="screen-welcome">
+  <div class="welcome-bg">
+    <div style="margin-bottom:28px;">
+      <svg height="52" viewBox="0 0 280 64" xmlns="http://www.w3.org/2000/svg">
+        <text x="0" y="56" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="64" fill="#00008B" letter-spacing="3">MARS</text>
+      </svg>
+    </div>
+    <div class="welcome-title">CGC Display Assessment Tool</div>
+    <div class="welcome-sub">Evaluate in-store displays against global principles and track performance over time.</div>
+    <div class="welcome-cards">
+      <div class="welcome-card" onclick="goTo('screen-new-session')">
+        <div class="welcome-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00008B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <div class="welcome-card-title">Begin a new session</div>
+        <div class="welcome-card-desc">Set up a fresh assessment for a customer and market, upload display photos and score against principles.</div>
+      </div>
+      <div class="welcome-card" onclick="goTo('screen-sessions')">
+        <div class="welcome-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00008B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="welcome-card-title">Open an existing session</div>
+        <div class="welcome-card-desc">Review, continue or compare previously completed assessments from your session history.</div>
+      </div>
+    </div>
+    <div style="margin-top:28px;font-size:11px;color:#aaa;">Sessions are saved locally in your browser</div>
+  </div>
+</div>
+
+<!-- ══ NEW SESSION SCREEN ══ -->
+<div class="screen" id="screen-new-session">
+  <div class="form-screen">
+    <div class="form-card">
+      <div class="form-card-title">New session</div>
+      <div class="form-card-sub">Enter the details below to begin your display assessment.</div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Customer name *</label>
+          <input type="text" id="ns-customer" placeholder="e.g. Tesco, Walmart...">
+        </div>
+        <div class="form-field">
+          <label>Market *</label>
+          <input type="text" id="ns-market" placeholder="e.g. UK, France...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Assessor name</label>
+          <input type="text" id="ns-assessor" placeholder="Your name">
+        </div>
+        <div class="form-field">
+          <label>Store / location</label>
+          <input type="text" id="ns-location" placeholder="e.g. Oxford Street">
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Session notes (optional)</label>
+        <textarea id="ns-notes" placeholder="Any context, objectives or background for this session..."></textarea>
+      </div>
+      <div class="form-error" id="ns-error">Please enter at least a customer name and market to continue.</div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="goTo('screen-welcome')">&#8592; Back</button>
+        <button class="btn btn-primary" onclick="startNewSession()">Start session &#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SESSIONS LIST SCREEN ══ -->
+<div class="screen" id="screen-sessions">
+  <div class="sessions-screen">
+    <div class="sessions-inner">
+      <div class="sessions-header">
+        <div>
+          <div class="sessions-title">Session history</div>
+          <div class="sessions-count" id="sessions-count">0 sessions</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" onclick="goTo('screen-welcome')">&#8592; Back</button>
+          <button class="btn btn-primary" onclick="goTo('screen-new-session')">+ New session</button>
+        </div>
+      </div>
+      <div id="sessions-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP SCREEN ══ -->
+<div class="screen" id="screen-app">
+
+  <div class="app-header">
+    <div class="header-left">
+      <svg height="32" viewBox="0 0 280 64" xmlns="http://www.w3.org/2000/svg">
+        <text x="0" y="56" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="64" fill="#00008B" letter-spacing="3">MARS</text>
+      </svg>
+      <div class="header-divider"></div>
+      <div class="header-session-pill">
+        <span class="header-session-label">Session:</span>
+        <span class="header-session-name" id="active-session-label">—</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <label class="logo-upload-label" for="logoUpload">+ Customer logo</label>
+      <input type="file" id="logoUpload" accept="image/*" onchange="handleLogo(event)">
+      <img id="custLogo" style="height:30px;display:none;border-radius:4px;border:1px solid var(--mb-border);padding:2px 8px;background:white;">
+      <button class="btn btn-ghost btn-sm" onclick="endSession()">&#8592; Sessions</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="appTabs">
+    <div class="tab active" onclick="switchTab('assess',this)">Display Assessment</div>
+    <div class="tab" onclick="switchTab('bp',this)">Global Best Practice</div>
+    <div class="tab" onclick="switchTab('summary',this)">Session Summary</div>
+  </div>
+
+  <!-- ASSESS TAB -->
+  <div id="tab-assess" class="app-body">
+    <div class="photo-panel">
+      <div class="photo-stage" id="photoStage">
+        <div class="photo-empty" id="photoEmpty">
+          <div class="photo-empty-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <p>Upload customer display photos</p>
+          <button class="btn btn-primary" style="margin-top:4px;" onclick="document.getElementById('photoInput').click()">Upload photos</button>
+          <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotos(event)">
+        </div>
+        <img id="mainImg" style="display:none;max-width:100%;max-height:100%;object-fit:contain;" alt="Display photo">
+        <div class="photo-label-badge" id="photoLbl" style="display:none;"></div>
+        <button class="nav-btn-circle left" id="prevBtn" onclick="navPhoto(-1)" style="display:none">&#8249;</button>
+        <button class="nav-btn-circle right" id="nextBtn" onclick="navPhoto(1)" style="display:none">&#8250;</button>
+        <div class="photo-count-badge" id="photoCount" style="display:none;"></div>
+      </div>
+      <div class="thumb-strip" id="thumbStrip">
+        <div class="add-thumb" onclick="document.getElementById('photoInput').click()">+</div>
+      </div>
+    </div>
+
+    <div class="assess-panel">
+      <div class="score-bar">
+        <div>
+          <div style="display:flex;align-items:baseline;gap:5px;">
+            <span class="score-big" id="scoreNum">0</span>
+            <span class="score-denom">/ 30</span>
+          </div>
+          <div class="score-sublabel">This image</div>
+        </div>
+        <div class="prog-wrap">
+          <div class="prog-label"><span>Rated</span><span id="pctLbl">0%</span></div>
+          <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%;background:var(--rag-r)"></div></div>
+        </div>
+        <div class="grade-badge" id="scoreGrade" style="background:#B4B2A9">—</div>
+      </div>
+      <div class="rag-legend">
+        <span class="rag-legend-item"><span class="rag-legend-dot" style="background:var(--rag-g)"></span>Green = Fully met (3pts)</span>
+        <span class="rag-legend-item"><span class="rag-legend-dot" style="background:var(--rag-a)"></span>Amber = Partial (2pts)</span>
+        <span class="rag-legend-item"><span class="rag-legend-dot" style="background:var(--rag-r)"></span>Red = Not met (1pt)</span>
+      </div>
+      <div class="img-label-row">
+        <label>Label:</label>
+        <input type="text" id="imgLabelInput" placeholder="e.g. Main Checkout, Express Lane..." oninput="updateCurrentLabel()" disabled>
+      </div>
+      <div class="session-info-bar" id="sessionInfoBar"></div>
+      <div class="principles-scroll">
+        <div class="submitted-banner" id="submittedBanner">
+          <strong>&#10003; Assessment submitted!</strong>
+          <span id="submittedText"></span>
+        </div>
+        <div class="principles-list" id="principlesList"></div>
+      </div>
+      <div class="submit-footer">
+        <div class="submit-status" id="submitStatus">Upload photos to begin.</div>
+        <button class="btn btn-primary" onclick="handleSubmit()">Submit assessment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BEST PRACTICE TAB -->
+  <div id="tab-bp" style="display:none;flex:1;overflow:hidden;flex-direction:column;">
+    <div class="bp-wrap">
+      <div class="bp-gallery">
+        <div class="bp-gallery-hdr">
+          <div>
+            <div class="bp-gallery-title">Global Best Practice Examples</div>
+            <div class="bp-gallery-count" id="bpCount">No examples added yet</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openBpForm()">+ Add example</button>
+        </div>
+        <div class="bp-grid" id="bpGrid">
+          <div class="bp-empty" id="bpEmpty">
+            <div class="bp-empty-icon">&#127758;</div>
+            <p style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px;">No best practice examples yet</p>
+            <p style="font-size:13px;">Click "Add example" to upload a reference image and commentary.</p>
+          </div>
+        </div>
+      </div>
+      <div class="bp-add-form" id="bpAddForm">
+        <div class="bp-form-title">Add a new best practice example</div>
+        <div class="bp-form-row">
+          <div class="bp-img-pick" id="bpImgPick" onclick="document.getElementById('bpFile').click()">
+            <span style="padding:10px;font-size:11px;text-align:center;color:#aaa;">Click to<br>upload image</span>
+          </div>
+          <input type="file" id="bpFile" accept="image/*" onchange="bpFilePicked(event)">
+          <div class="bp-form-fields">
+            <input type="text" id="bpTitle" placeholder="Title (e.g. Confectionery — Tesco UK)">
+            <input type="text" id="bpRegion" placeholder="Region / market (e.g. UK, North America)">
+            <textarea id="bpCommentary" placeholder="What makes this a great example? Key observations..."></textarea>
+          </div>
+        </div>
+        <div class="bp-form-actions">
+          <button class="btn btn-ghost btn-sm" onclick="closeBpForm()">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveBpExample()">Save example</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY TAB -->
+  <div id="tab-summary" style="display:none;flex:1;overflow:hidden;">
+    <div class="summary-scroll">
+      <div class="summary-inner">
+        <div class="summary-hdr">
+          <div>
+            <div class="summary-title" id="summaryTitle">Session Summary</div>
+            <div class="summary-meta" id="summaryMeta"></div>
+          </div>
+          <div class="grade-badge" id="summaryGrade" style="background:#B4B2A9;font-size:22px;padding:8px 20px;">—</div>
+        </div>
+        <div class="rollup-grid" id="rollupCards"></div>
+        <div id="imgCards"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BP DETAIL OVERLAY -->
+<div class="overlay" id="bpOverlay" onclick="handleOverlayClick(event)">
+  <div class="detail-modal">
+    <div class="detail-img-wrap">
+      <img class="detail-img" id="detailImg" src="" alt="">
+      <div class="detail-num-badge" id="detailNum"></div>
+      <button class="detail-close" onclick="closeDetail()">&#10005;</button>
+    </div>
+    <div class="detail-body">
+      <div class="detail-title" id="detailTitle"></div>
+      <div class="detail-region" id="detailRegion"></div>
+      <div class="detail-commentary" id="detailCommentary"></div>
+      <div class="detail-nav">
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" id="detailPrev" onclick="navDetail(-1)">&#8592; Previous</button>
+          <button class="btn btn-ghost btn-sm" id="detailNext" onclick="navDetail(1)">Next &#8594;</button>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteBpExample()">Remove</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const PRINCIPLES = [
+  { title: "Dominant shelf presence", desc: "CGC products occupy the primary sight-line and command share of shelf" },
+  { title: "Category blocking", desc: "Products blocked by segment rather than mixed with competitor brands" },
+  { title: "Brand architecture", desc: "Hero SKUs at eye level; flankers above/below with clear hierarchy" },
+  { title: "Pricing visibility", desc: "Clear, legible price communication visible from shopper approach" },
+  { title: "POS & signage", desc: "Branded POS is present, current, correctly positioned and undamaged" },
+  { title: "Stock fullness", desc: "Shelves fully stocked with no significant gaps or out-of-stocks" },
+  { title: "Planogram compliance", desc: "Display matches agreed planogram with correct facings and SKU placement" },
+  { title: "Cross-category linkage", desc: "Appropriate adjacencies in place to drive basket size" },
+  { title: "Promotional alignment", desc: "Current promotional activity is reflected in the display" },
+  { title: "Cleanliness & brand image", desc: "Display is clean, tidy and reflects positively on brand image" }
+];
+
+// ── STATE ──
+let sessions = loadSessions();
+let activeSession = null;
+let images = [], current = 0;
+let bpExamples = [], bpCurrent = 0, bpFileUrl = null;
+
+// ── PERSISTENCE ──
+function loadSessions() {
+  try { return JSON.parse(localStorage.getItem('cgc_sessions') || '[]'); } catch(e) { return []; }
+}
+function saveSessions() {
+  try { localStorage.setItem('cgc_sessions', JSON.stringify(sessions)); } catch(e) {}
+}
+
+// ── NAVIGATION ──
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'screen-sessions') renderSessionsList();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── NEW SESSION ──
+function startNewSession() {
+  const customer = document.getElementById('ns-customer').value.trim();
+  const market = document.getElementById('ns-market').value.trim();
+  const err = document.getElementById('ns-error');
+  if (!customer || !market) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  activeSession = {
+    id: Date.now(),
+    customer, market,
+    assessor: document.getElementById('ns-assessor').value.trim(),
+    location: document.getElementById('ns-location').value.trim(),
+    notes: document.getElementById('ns-notes').value.trim(),
+    date: new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' }),
+    images: [], grade: '—', gradeBg: '#B4B2A9', score: 0, maxScore: 0, submitted: false
+  };
+  ['ns-customer','ns-market','ns-assessor','ns-location','ns-notes'].forEach(id => document.getElementById(id).value = '');
+  images = []; current = 0;
+  launchApp();
+}
+
+function launchApp() {
+  document.getElementById('active-session-label').textContent = activeSession.customer + ' — ' + activeSession.market;
+  buildSessionInfoBar();
+  buildPrinciples();
+  resetPhotoPanel();
+  updateSubmitStatus();
+  document.getElementById('submittedBanner').classList.remove('show');
+  if (activeSession.submitted) {
+    document.getElementById('submittedBanner').classList.add('show');
+    document.getElementById('submittedText').textContent = activeSession.customer + ' · ' + activeSession.market + ' · ' + activeSession.date;
+  }
+  document.querySelectorAll('#appTabs .tab').forEach((t,i) => t.classList.toggle('active', i===0));
+  document.getElementById('tab-assess').style.display = 'flex';
+  document.getElementById('tab-bp').style.display = 'none';
+  document.getElementById('tab-summary').style.display = 'none';
+  goTo('screen-app');
+}
+
+function buildSessionInfoBar() {
+  const s = activeSession, parts = [];
+  if (s.assessor) parts.push(`<span class="sib-item" style="font-weight:600;">${s.assessor}</span>`);
+  if (s.location) parts.push(`<span class="sib-item">${s.location}</span>`);
+  parts.push(`<span class="sib-item">${s.date}</span>`);
+  document.getElementById('sessionInfoBar').innerHTML = parts.join('<span class="sib-sep"> · </span>');
+}
+
+function endSession() {
+  if (activeSession) { persistCurrentSession(); saveSessions(); showToast('Session saved'); }
+  goTo('screen-welcome');
+}
+
+function persistCurrentSession() {
+  if (!activeSession) return;
+  let allR = [];
+  images.forEach(img => img.ratings.forEach(r => { if (r) allR.push(r); }));
+  const total = allR.reduce((s,r) => s + (r==='r'?1:r==='a'?2:3), 0);
+  const gi = gradeInfo(total, allR.length);
+  Object.assign(activeSession, {
+    score: total, maxScore: allR.length * 3,
+    grade: gi.g, gradeBg: gi.bg, imageCount: images.length,
+    images: images.map(img => ({ url: img.url, label: img.label, name: img.label, ratings: [...img.ratings] }))
+  });
+  const idx = sessions.findIndex(s => s.id === activeSession.id);
+  if (idx >= 0) sessions[idx] = activeSession; else sessions.unshift(activeSession);
+}
+
+// ── SESSIONS LIST ──
+function renderSessionsList() {
+  const list = document.getElementById('sessions-list');
+  const count = document.getElementById('sessions-count');
+  count.textContent = sessions.length + ' session' + (sessions.length !== 1 ? 's' : '');
+  if (!sessions.length) {
+    list.innerHTML = `<div class="sessions-empty"><div class="sessions-empty-icon">&#128193;</div><p style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;">No sessions yet</p><p>Start a new session to begin assessing displays.</p></div>`;
+    return;
+  }
+  list.innerHTML = sessions.map(s => `
+    <div class="session-card" onclick="loadSession(${s.id})">
+      <div class="session-grade-badge" style="background:${s.gradeBg||'#B4B2A9'}">${s.grade||'—'}</div>
+      <div class="session-card-info">
+        <div class="session-card-name">${s.customer} — ${s.market}</div>
+        <div class="session-card-meta">${s.date}${s.assessor?' · '+s.assessor:''}${s.location?' · '+s.location:''}${s.imageCount?' · '+s.imageCount+' image'+(s.imageCount!==1?'s':''):''}</div>
+        ${s.notes ? `<div class="session-card-notes">${s.notes}</div>` : ''}
+      </div>
+      <div class="session-card-score" style="color:var(--mb)">${s.score||0}${s.maxScore?' / '+s.maxScore:''}</div>
+      <div class="session-card-arrow">&#8250;</div>
+    </div>`).join('');
+}
+
+function loadSession(id) {
+  const s = sessions.find(s => s.id === id); if (!s) return;
+  activeSession = s;
+  images = (s.images||[]).map(img => ({ url: img.url, label: img.label, name: img.label, ratings: [...img.ratings] }));
+  current = 0;
+  launchApp();
+  if (images.length > 0) { setTimeout(() => showImage(0), 50); }
+}
+
+// ── PRINCIPLES ──
+function buildPrinciples() {
+  document.getElementById('principlesList').innerHTML = PRINCIPLES.map((p,i) => `
+    <div class="pcard" id="pc-${i}">
+      <div class="pcard-header">
+        <span class="pnum">${i+1}.</span>
+        <div style="flex:1"><div class="ptitle">${p.title}</div><div class="pdesc">${p.desc}</div></div>
+        <div class="rag-ind" id="ind-${i}"></div>
+      </div>
+      <div class="rag-btns">
+        <button class="rag-btn r" onclick="rate(${i},'r')">Red</button>
+        <button class="rag-btn a" onclick="rate(${i},'a')">Amber</button>
+        <button class="rag-btn g" onclick="rate(${i},'g')">Green</button>
+      </div>
+    </div>`).join('');
+}
+
+function refreshPrincipleUI() {
+  if (!images.length) return;
+  const ratings = images[current].ratings;
+  PRINCIPLES.forEach((_,i) => {
+    const card = document.getElementById(`pc-${i}`); if (!card) return;
+    card.querySelectorAll('.rag-btn').forEach(b => b.classList.remove('active'));
+    const r = ratings[i];
+    if (r) {
+      card.querySelector(`.rag-btn.${r}`).classList.add('active');
+      document.getElementById(`ind-${i}`).style.background = r==='r'?'var(--rag-r)':r==='a'?'var(--rag-a)':'var(--rag-g)';
+    } else { document.getElementById(`ind-${i}`).style.background = '#e0e0e0'; }
+  });
+  updateScoreBar(); updateSubmitStatus();
+}
+
+function rate(i, color) {
+  if (!images.length) return;
+  images[current].ratings[i] = color;
+  refreshPrincipleUI(); renderThumbs();
+  persistCurrentSession(); saveSessions();
+}
+
+function scoreOf(img) {
+  const pts = {r:1,a:2,g:3}, rated = img.ratings.filter(r => r !== null);
+  return { total: rated.reduce((s,r) => s+pts[r], 0), rated: rated.length };
+}
+
+function gradeInfo(total, rated) {
+  if (!rated) return { g:'—', bg:'#B4B2A9' };
+  const ratio = total / (rated * 3);
+  if (ratio >= 0.8) return { g:'A', bg:'var(--rag-g)' };
+  if (ratio >= 0.6) return { g:'B', bg:'#3B6D11' };
+  if (ratio >= 0.4) return { g:'C', bg:'var(--rag-a)' };
+  return { g:'D', bg:'var(--rag-r)' };
+}
+
+function imgDotColor(img) {
+  const {total, rated} = scoreOf(img); if (!rated) return '#888';
+  const {g} = gradeInfo(total, rated);
+  return g==='A'||g==='B' ? 'var(--rag-g)' : g==='C' ? 'var(--rag-a)' : 'var(--rag-r)';
+}
+
+function updateScoreBar() {
+  if (!images.length) return;
+  const {total, rated} = scoreOf(images[current]);
+  const pct = Math.round((rated / PRINCIPLES.length) * 100);
+  document.getElementById('scoreNum').textContent = total;
+  document.getElementById('pctLbl').textContent = pct + '%';
+  const fill = document.getElementById('progFill');
+  fill.style.width = pct + '%';
+  fill.style.background = pct < 40 ? 'var(--rag-r)' : pct < 75 ? 'var(--rag-a)' : 'var(--rag-g)';
+  const gi = gradeInfo(total, rated);
+  const g = document.getElementById('scoreGrade'); g.textContent = gi.g; g.style.background = gi.bg;
+}
+
+function updateSubmitStatus() {
+  if (!images.length) { document.getElementById('submitStatus').textContent = 'Upload photos to begin.'; return; }
+  const totalRated = images.reduce((s, img) => s + img.ratings.filter(r => r !== null).length, 0);
+  const unrated = images.length * PRINCIPLES.length - totalRated;
+  document.getElementById('submitStatus').textContent = unrated > 0
+    ? `${unrated} principle${unrated > 1 ? 's' : ''} still unrated.`
+    : 'All principles rated — ready to submit.';
+}
+
+function handleSubmit() {
+  persistCurrentSession();
+  activeSession.submitted = true;
+  saveSessions();
+  const s = activeSession;
+  document.getElementById('submittedBanner').classList.add('show');
+  document.getElementById('submittedText').textContent = `${s.customer} · ${s.market} · ${s.date}`;
+  document.getElementById('submittedBanner').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  showToast('Assessment submitted and saved');
+}
+
+// ── PHOTOS ──
+function handlePhotos(e) {
+  Array.from(e.target.files).forEach(f => {
+    images.push({ url: URL.createObjectURL(f), name: f.name.replace(/\.[^.]+$/, ''), label: f.name.replace(/\.[^.]+$/, ''), ratings: new Array(PRINCIPLES.length).fill(null) });
+  });
+  showImage(images.length - 1); renderThumbs(); updateSubmitStatus();
+}
+
+function resetPhotoPanel() {
+  document.getElementById('mainImg').style.display = 'none';
+  document.getElementById('photoEmpty').style.display = 'flex';
+  document.getElementById('photoLbl').style.display = 'none';
+  document.getElementById('prevBtn').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('photoCount').style.display = 'none';
+  document.getElementById('imgLabelInput').value = ''; document.getElementById('imgLabelInput').disabled = true;
+  renderThumbs();
+}
+
+function renderThumbs() {
+  document.getElementById('thumbStrip').innerHTML = images.map((img, i) => `
+    <div class="thumb-wrap">
+      <img class="thumb ${i === current ? 'active' : ''}" src="${img.url}" onclick="showImage(${i})" title="${img.label}" alt="">
+      <div class="thumb-rag-dot" style="background:${imgDotColor(img)}"></div>
+    </div>`).join('') + `<div class="add-thumb" onclick="document.getElementById('photoInput').click()" title="Add more photos">+</div>`;
+}
+
+function showImage(i) {
+  current = i; const img = images[i];
+  document.getElementById('mainImg').src = img.url; document.getElementById('mainImg').style.display = 'block';
+  document.getElementById('photoEmpty').style.display = 'none';
+  document.getElementById('photoLbl').textContent = img.label; document.getElementById('photoLbl').style.display = 'block';
+  document.getElementById('photoCount').textContent = (i + 1) + ' / ' + images.length; document.getElementById('photoCount').style.display = 'block';
+  document.getElementById('prevBtn').style.display = images.length > 1 ? 'flex' : 'none';
+  document.getElementById('nextBtn').style.display = images.length > 1 ? 'flex' : 'none';
+  const li = document.getElementById('imgLabelInput'); li.value = img.label; li.disabled = false;
+  refreshPrincipleUI(); renderThumbs();
+}
+
+function navPhoto(d) { showImage((current + d + images.length) % images.length); }
+
+function updateCurrentLabel() {
+  if (!images.length) return;
+  images[current].label = document.getElementById('imgLabelInput').value;
+  document.getElementById('photoLbl').textContent = images[current].label;
+  renderThumbs();
+}
+
+function handleLogo(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const el = document.getElementById('custLogo'); el.src = URL.createObjectURL(f); el.style.display = 'block';
+}
+
+// ── BEST PRACTICE ──
+function openBpForm() {
+  bpFileUrl = null;
+  ['bpTitle','bpRegion','bpCommentary'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('bpImgPick').innerHTML = '<span style="padding:10px;font-size:11px;text-align:center;color:#aaa;">Click to<br>upload image</span>';
+  document.getElementById('bpAddForm').classList.add('open');
+  document.getElementById('bpAddForm').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+function closeBpForm() { document.getElementById('bpAddForm').classList.remove('open'); }
+function bpFilePicked(e) {
+  const f = e.target.files[0]; if (!f) return;
+  bpFileUrl = URL.createObjectURL(f);
+  document.getElementById('bpImgPick').innerHTML = `<img src="${bpFileUrl}" alt="Best practice image">`;
+}
+function saveBpExample() {
+  bpExamples.push({ url: bpFileUrl, title: document.getElementById('bpTitle').value.trim() || 'Untitled example', region: document.getElementById('bpRegion').value.trim(), commentary: document.getElementById('bpCommentary').value.trim() });
+  closeBpForm(); renderBpGrid(); showToast('Example saved');
+}
+function renderBpGrid() {
+  const grid = document.getElementById('bpGrid');
+  document.getElementById('bpCount').textContent = bpExamples.length ? `${bpExamples.length} example${bpExamples.length > 1 ? 's' : ''}` : 'No examples added yet';
+  if (!bpExamples.length) {
+    grid.innerHTML = '<div class="bp-empty" id="bpEmpty"><div class="bp-empty-icon">&#127758;</div><p style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px;">No best practice examples yet</p><p style="font-size:13px;">Click "Add example" to upload a reference image.</p></div>';
+    return;
+  }
+  grid.innerHTML = bpExamples.map((ex, i) => `
+    <div class="bp-bubble" onclick="openDetail(${i})">
+      ${ex.url ? `<img src="${ex.url}" alt="${ex.title}">` : `<div class="bp-bubble-img-placeholder">&#127758;</div>`}
+      <div class="bp-bubble-label">
+        <div class="bp-bubble-title">${ex.title}</div>
+        ${ex.region ? `<div class="bp-bubble-region">${ex.region}</div>` : ''}
+        <span class="bp-bubble-num">#${i + 1}</span>
+      </div>
+    </div>`).join('');
+}
+function openDetail(i) { bpCurrent = i; renderDetail(); document.getElementById('bpOverlay').classList.add('open'); }
+function renderDetail() {
+  const ex = bpExamples[bpCurrent];
+  document.getElementById('detailImg').src = ex.url || ''; document.getElementById('detailImg').style.display = ex.url ? 'block' : 'none';
+  document.getElementById('detailNum').textContent = `Example ${bpCurrent + 1} of ${bpExamples.length}`;
+  document.getElementById('detailTitle').textContent = ex.title;
+  document.getElementById('detailRegion').textContent = ex.region || '';
+  document.getElementById('detailCommentary').textContent = ex.commentary || 'No commentary added.';
+  document.getElementById('detailPrev').disabled = bpCurrent === 0;
+  document.getElementById('detailNext').disabled = bpCurrent === bpExamples.length - 1;
+}
+function navDetail(d) { bpCurrent = Math.max(0, Math.min(bpExamples.length - 1, bpCurrent + d)); renderDetail(); }
+function closeDetail() { document.getElementById('bpOverlay').classList.remove('open'); }
+function handleOverlayClick(e) { if (e.target === document.getElementById('bpOverlay')) closeDetail(); }
+function deleteBpExample() { bpExamples.splice(bpCurrent, 1); closeDetail(); renderBpGrid(); showToast('Example removed'); }
+
+// ── SUMMARY ──
+function buildSummary() {
+  const s = activeSession || {};
+  document.getElementById('summaryTitle').textContent = (s.customer||'Customer') + (s.market?' · '+s.market:'') + ' — Display Assessment';
+  const meta = [s.date, s.assessor, s.location].filter(Boolean).join(' · ');
+  document.getElementById('summaryMeta').textContent = meta;
+  if (!images.length) {
+    document.getElementById('rollupCards').innerHTML = '';
+    document.getElementById('imgCards').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2);">No images uploaded yet.</div>';
+    document.getElementById('summaryGrade').textContent = '—'; document.getElementById('summaryGrade').style.background = '#B4B2A9'; return;
+  }
+  let all = []; images.forEach(img => img.ratings.forEach(r => { if (r) all.push(r); }));
+  const total = all.reduce((s,r) => s+(r==='r'?1:r==='a'?2:3), 0);
+  const greens = all.filter(r=>r==='g').length, ambers = all.filter(r=>r==='a').length, reds = all.filter(r=>r==='r').length;
+  const gi = gradeInfo(total, all.length);
+  document.getElementById('summaryGrade').textContent = gi.g; document.getElementById('summaryGrade').style.background = gi.bg;
+  document.getElementById('rollupCards').innerHTML = `
+    <div class="rollup-card"><div class="rollup-val" style="color:var(--mb)">${total}<span style="font-size:15px;color:var(--text2)"> / ${all.length*3}</span></div><div class="rollup-lbl">Total score</div></div>
+    <div class="rollup-card"><div class="rollup-val" style="color:var(--rag-g)">${greens}</div><div class="rollup-lbl">Green (fully met)</div></div>
+    <div class="rollup-card"><div class="rollup-val" style="color:var(--rag-a)">${ambers}</div><div class="rollup-lbl">Amber (partial)</div></div>
+    <div class="rollup-card"><div class="rollup-val" style="color:var(--rag-r)">${reds}</div><div class="rollup-lbl">Red (not met)</div></div>`;
+  document.getElementById('imgCards').innerHTML = images.map(img => {
+    const {total, rated} = scoreOf(img), gi = gradeInfo(total, rated);
+    const rows = PRINCIPLES.map((p, i) => {
+      const r = img.ratings[i]; if (!r) return '';
+      const dot = r==='g'?'var(--rag-g)':r==='a'?'var(--rag-a)':'var(--rag-r)';
+      return `<div class="p-row"><div class="p-dot" style="background:${dot}"></div><span class="p-name">${p.title}</span><span class="p-badge ${r}">${r==='g'?'Green':r==='a'?'Amber':'Red'}</span></div>`;
+    }).join('');
+    const unrated = PRINCIPLES.length - rated;
+    return `<div class="img-summary-card"><div class="img-summary-top"><img class="img-summary-thumb" src="${img.url}" alt="${img.label}"><div class="img-summary-info"><div class="img-summary-name">${img.label}</div><div class="img-summary-meta">${rated} of ${PRINCIPLES.length} rated${unrated > 0 ? ` · ${unrated} unassessed` : ''}</div><div class="img-summary-score"><span style="font-size:13px;color:var(--text2);">Score:</span><strong>${total} / ${PRINCIPLES.length*3}</strong><span class="img-summary-grade" style="background:${gi.bg}">${gi.g}</span></div></div></div>${rated > 0 ? `<div class="img-principles">${rows}</div>` : ''}</div>`;
+  }).join('');
+}
+
+// ── TABS ──
+function switchTab(tab, el) {
+  document.querySelectorAll('#appTabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-assess').style.display = tab==='assess' ? 'flex' : 'none';
+  document.getElementById('tab-bp').style.display = tab==='bp' ? 'flex' : 'none';
+  document.getElementById('tab-summary').style.display = tab==='summary' ? 'flex' : 'none';
+  if (tab === 'summary') buildSummary();
+}
+
+// ── KEYBOARD SHORTCUTS ──
+document.addEventListener('keydown', e => {
+  if (document.getElementById('screen-app').classList.contains('active')) {
+    if (e.key === 'ArrowLeft' && images.length > 1) navPhoto(-1);
+    if (e.key === 'ArrowRight' && images.length > 1) navPhoto(1);
+  }
+  if (e.key === 'Escape') closeDetail();
+});
+</script>
+</body>
+</html>
